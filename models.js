@@ -1,49 +1,51 @@
-'use strict'
+'use strict';
 
-var mongoose = require('mongoose');
+var mongoose = require("mongoose");
 
 var Schema = mongoose.Schema;
 
-var sortAnswers = (a,b) => {
-  if(a.votes === b.votes){
-    return b.updatedAt - a.updatedAt;
-  }
-  return b.votes - a.votes;
+var sortAnswers = function(a, b) {
+	//- negative a before b
+	//0 no change
+	//+ positive a after b
+	if(a.votes === b.votes){
+		return b.updatedAt - a.updatedAt;
+	}
+	return b.votes - a.votes;
 }
 
 var AnswerSchema = new Schema({
-  text: String,
-  createdAt: {type: Date, default: Date.now},
-  updatedAt: {type: Date, default: Date.now},
-  votes: {type: Number, default:0}
+	text: String,
+	createdAt: {type: Date, default: Date.now},
+	updatedAt: {type: Date, default: Date.now},
+	votes: {type: Number, default:0}
 });
 
-AnswerSchema.method('update', (updates, callback) => {
-  Object.assign(this, updates, {updatedAt: new Date()});
-  this.parent().save(callback);
+AnswerSchema.method("update", function(updates, callback) {
+	Object.assign(this, updates, {updatedAt: new Date()});
+	this.parent().save(callback);
 });
 
-AnswerSchema.method('vote', (vote, callback) => {
-  if(vote === 'up'){
-    this.vote++;
-  }else {
-    this.vote--;
-  }
+AnswerSchema.method("vote", function(vote, callback) {
+	if(vote === "up") {
+		this.votes += 1;
+	} else {
+		this.votes -= 1;
+	}
+	this.parent().save(callback);
 });
-
-
 
 var QuestionSchema = new Schema({
-  text: String,
-  createdAt: {type: Date, default: Date.now},
-  answers: [AnswerSchema]
+	text: String,
+	createdAt: {type: Date, default: Date.now},
+	answers: [AnswerSchema]
 });
 
-QuestionSchema.pre('save', () => {
-  this.answers.sort(sortAnswers);
-  next();
+QuestionSchema.pre("save", function(next){
+	this.answers.sort(sortAnswers);
+	next();
 });
 
-var Question = mongoose.model('Question', QuestionSchema);
+var Question = mongoose.model("Question", QuestionSchema);
 
 module.exports.Question = Question;
